@@ -3,7 +3,6 @@
 #           -   castillo@biomomentum.com
 ######################################################################################
 import numpy as np
-#from read_mach_1_file_PYTH import *
 """
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Function: isNegative
@@ -25,7 +24,7 @@ def isNegative(posZ):
 % Description: Extracts statistical R-squared
 % Inputs:   Y           - Signal Fitted
 %           mse         - Mean Squared Error
-%           poly_order  - Order of fit polynomial
+%           poly_order  - Order of fit polynomial, number of independent variables
 % Output:   Rsq_adj     -  R-squared
 % 
 %   By: Renato Castillo, 11Dec2023
@@ -43,7 +42,6 @@ def rsquared(Y, mse, poly_order):
 % Description: Checks if data passes statistical tests
 % Inputs:   loadZ     - Array Z-load (N or gf)
 %           posZ      - Array Z-position (mm)
-%           test_num  - test# (default = 1)
 %           Rsq_req   - required R**2 value for test to be accepted
 % Output:   Rsq_adj   - R-squared
 % 
@@ -51,7 +49,7 @@ def rsquared(Y, mse, poly_order):
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 """
-def check_data(loadZ, posZ, test_num, Rsq_req):
+def check_data(loadZ, posZ, Rsq_req):
     poly_order = 2
     N = len(loadZ)
     X = np.zeros((N, poly_order + 1))
@@ -133,12 +131,12 @@ def Hayes_Model(w0,h,R,v):
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 """
-def HayesElasticModel(posZ, loadZ, gf_flag, maxStrain, R, v, test_num, Rsq_req, sampleThickness = None, origin_set=False, eqModulus=False):
+def HayesElasticModel(posZ, loadZ, gf_flag, maxStrain, R, v, Rsq_req, sampleThickness = None, origin_set=False, eqModulus=False):
     gf_to_N = 0.00980655
     if gf_flag:
         loadZ = loadZ*gf_to_N
     posZ = isNegative(posZ)
-    req = check_data(loadZ, posZ, test_num, Rsq_req)
+    req = check_data(loadZ, posZ, Rsq_req)
     if req == 0:
         print('... DATA INVALID. Bad Recording ...\n')
         G = -1
@@ -150,13 +148,12 @@ def HayesElasticModel(posZ, loadZ, gf_flag, maxStrain, R, v, test_num, Rsq_req, 
         l = len(posZ)
         M = np.zeros((l,2))
         ZmaxIdx = np.argmax(posZ)
-        #Zmax = posZ[ZmaxIdx]
         z0 = posZ[0]
         if eqModulus:
             ZmaxIdx = len(posZ)
         for k in range(ZmaxIdx):
             if not eqModulus:
-                if posZ[k] > (1+maxStrain)*z0:
+                if posZ[k] > (1 + maxStrain) * z0:
                     req = 1
                     break
             w0 = posZ[k] - z0
@@ -168,38 +165,29 @@ def HayesElasticModel(posZ, loadZ, gf_flag, maxStrain, R, v, test_num, Rsq_req, 
             M[k,0] = P
             M[k,1] = 4*w0*a*K/(1-v)   
         if not req == 1:
-            print('WARNING! Max strain is %.2g. Curvefit is up to max strain!\n', w0/z0)
-        M = M[:k+1,:]
-        #condId = ~np.all(M == 0, axis=1)
-        #M = M[condId]
-        #condId2 = np.argwhere(M[:,1] != 0)
-        #condId2 = np.reshape(condId2,(1,len(condId2)))
-        #M = M[condId2][0]
-        #print(M[condId2])
+            print('WARNING! Max strain is %.2g. Curvefit is up to max strain! ', w0/z0)
+        M = M[:k + 1, :]
         N = len(M)
         if origin_set:
-            b0 = M[0,0]
-            B = M[:,0] - b0
-            A = M[:,1]
+            b0 = M[0, 0]
+            B = M[:, 0] - b0
+            A = M[:, 1]
             
-            G = np.linalg.solve(np.dot(A.reshape(1,N),A.reshape(N,1)),np.dot(A.reshape(1,N),B))
+            G = np.linalg.solve(np.dot(A.reshape(1, N), A.reshape(N, 1)), np.dot(A.reshape(1, N), B))
             FitLoadZ = b0 + G*A
             G = G[0]
         else:
-            A = np.zeros((N,2))
-            B = M[:,0] 
-            A[:,0] = 1
-            A[:,1] = M[:,1]
-            Soln = np.linalg.solve(np.dot(A.transpose(),A),np.dot(A.transpose(),B))
+            A = np.zeros((N, 2))
+            B = M[:, 0] 
+            A[:, 0] = 1
+            A[:, 1] = M[:, 1]
+            Soln = np.linalg.solve(np.dot(A.transpose(), A), np.dot(A.transpose(), B))
             G = Soln[1]
-            FitLoadZ = np.dot(A,Soln)
-        E = 2*G*(1+v)
-        FitPosZ = posZ[:k+1]
+            FitLoadZ = np.dot(A, Soln)
+        E = 2*G*(1 + v)
+        FitPosZ = posZ[:k + 1]
         FitLoadZ_c = FitLoadZ/gf_to_N
-        #Fit = np.hstack((FitPosZ.reshape(N,1),FitLoadZ_c.reshape(N,1)))
-        #FitPosZ = FitPosZ[condId]
-        #FitPosZ = FitPosZ[condId2]
-        Fit = np.hstack((FitPosZ.reshape(N,1),FitLoadZ_c.reshape(N,1)))
+        Fit = np.hstack((FitPosZ.reshape(N, 1),FitLoadZ_c.reshape(N, 1)))
         mse = np.sum((B - FitLoadZ)**2)/N
         if eqModulus:
             Rsq_adj = -1
