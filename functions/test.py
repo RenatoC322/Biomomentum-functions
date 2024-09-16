@@ -16,6 +16,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt 
 from HayesElasticModel_PYTH import *
+from Sinus_Analysis_PYTH import *
 from read_mach_1_file_PYTH import read_mach_1_file, read_mach_1_files, select_mach_1_file
 #%%
 ####################################### FUNCTIONS #######################################
@@ -68,7 +69,7 @@ time = mach_1_files_data[filename]["Stress Relaxation-1"]["<DATA>"]["Ramp-1"]["T
 position_Z = mach_1_files_data[filename]["Stress Relaxation-1"]["<DATA>"]["Ramp-1"]["Position (z)"]
 Fz = mach_1_files_data[filename]["Stress Relaxation-1"]["<DATA>"]["Ramp-1"]["Fz"]
 units_gf = "Single" in mach_1_files_data[filename]["Stress Relaxation-1"]["<INFO>"]["Load Cell Type:"]
-#%%
+
 # Hayes Model Inputs
 indenter_R = 0.15
 poisson_coefficient = 0.5
@@ -77,7 +78,8 @@ sample_thickness = 100000
 strain = abs((position_Z - position_Z[0])/position_Z[0])
 maxStrain = np.max(strain)
 G_inst, E_inst, Fit_inst, Rsq_adj_inst = HayesElasticModel(position_Z, Fz, units_gf, maxStrain, indenter_R, poisson_coefficient, Rsq_req, sample_thickness, True, False)
-#%%
+
+# Plotting Hayes Model Fit unto data
 fig = plt.figure(figsize=(20,15))
 axes = fig.add_subplot(111)
 axes.plot(isNegative(position_Z), Fz, "-b", label = "Fz")
@@ -88,9 +90,80 @@ axes.tick_params(axis = 'both', which = 'major', labelsize=15)
 axes.set_title(filename + " - Elastic Model in Indentation - Stress-Relaxation-1", size = 20)
 plt.grid()
 plt.legend(loc = 'lower right', fontsize = 20)
-#fig.legend(loc = 7, prop = { "size": 20 })
-#fig.subplots_adjust(right=0.8)
 plt.show()
 print("Stress-Relaxation-1")
 print("Indentation Elastic Modulus (MPa): ", E_inst)
 print(' R{}: '.format(get_super('2')), Rsq_adj_inst)
+#%%
+# Testing Dynamic - Sinusoid Analysis
+mach_1_data = read_mach_1_file(select_mach_1_file())
+#%%
+PeakToPeak = 1
+function = "Sinusoid-1"
+units_gf = "Single" in mach_1_data[function]["<INFO>"]["Load Cell Type:"]
+Time = mach_1_data[function]["<DATA>"]["Time"]
+posZ = mach_1_data[function]["<DATA>"]["Position (z)"]
+Fz = mach_1_data[function]["<DATA>"]["Fz"]
+fs = 1/np.mean(np.diff(Time))
+if units_gf:
+    Fz = Fz*0.00980665
+frequency = float(mach_1_data[function]["<Sinusoid>"]["Frequency, Hz:"])
+cycles = float(mach_1_data[function]["<Sinusoid>"]["Number of Cycles:"])
+thickness = float(mach_1_data[function]["<Sinusoid>"]["Amplitude, mm:"])/(PeakToPeak/200) 
+Interval, Amp_normalized, peaks = trim_edges(posZ, fs, frequency, distance = int(fs/(4*frequency)) - 5)
+Fz_filtered = butterworth_filter(Fz)
+posZeq, posZamp, fn1, phi1, posZ_fit, t_fit, ser_posZ = FitSinusoid(Time, posZ, frequency, Interval, method="trf", lossType="soft_l1", fscale=0.0001)
+Fzeq,Fzamp,fn2,phi2,Fz_fit, _, ser_Fz = FitSinusoid(Time, Fz, fn1, Interval, method="trf", lossType="soft_l1", fscale=0.0001)
+fn = fn1
+delta = abs(phi2 - phi1)
+delta_deg = delta*180/np.pi
+if delta_deg >= 180:
+    delta_deg = 360 - delta_deg
+k = Fzamp/posZamp
+E1 = k*np.cos(delta)
+E2 = k*np.sin(delta)
+E_dyn = np.linalg.norm(np.array([E1, E2]))      
+
+# Plotting Sinus Fit unto data
+fig = plt.figure(figsize=(20,15))
+axes = fig.add_subplot(111)
+axes.plot(Time, posZ, "+")
+axes.plot(t_fit, posZ_fit, "--r")
+axes.set_ylabel("Position Z (mm)",size=20)
+axes.set_xlabel("Time (s)",size=20)
+axes.tick_params(axis = 'both', which = 'major', labelsize=15)
+plt.grid()
+plt.show()
+
+fig = plt.figure(figsize=(20,15))
+axes = fig.add_subplot(111)
+axes.plot(Time, Fz, "o")
+axes.plot(t_fit, Fz_fit, "--r")
+axes.set_ylabel("Force (gf)",size=20)
+axes.set_xlabel("Time (s)",size=20)
+axes.tick_params(axis = 'both', which = 'major', labelsize=15)
+plt.grid()
+plt.show()
+
+fig = plt.figure(figsize=(20,15))
+axes = fig.add_subplot(111)
+axes.plot(posZ, Fz, "o")
+axes.plot(posZ_fit, Fz_fit, "--r")
+axes.set_ylabel("Force (gf)",size=20)
+axes.set_xlabel("Position Z (mm)",size=20)
+axes.tick_params(axis = 'both', which = 'major', labelsize=15)
+plt.grid()
+plt.show()
+
+print("=======================================")
+print(function + " :")
+print("Frequency (Hz): ", np.round(fn1,6))
+print("Position-z Amplitude (mm): ", np.round(posZamp,6))
+print("Fz Amplitude (N): ", np.round(Fzamp,6))
+print("E*: ", np.round(E_dyn,6))
+print("Phase lag (deg): ", np.round(delta_deg,6))
+print("Residual Standard Error Position-z (mm): ", np.round(ser_posZ,6))
+print("Residual Standard Error Force-z (N): ", np.round(ser_Fz,6))
+print("===============================================")
+
+
