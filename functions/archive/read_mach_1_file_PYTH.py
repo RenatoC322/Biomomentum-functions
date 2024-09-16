@@ -7,9 +7,9 @@ import pandas as pd
 import os
 import tkinter
 import re
+import numpy as np
 import concurrent.futures
 from tkinter import filedialog, messagebox
-from itertools import chain
 """
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Function: sorted_alphanumeric
@@ -21,7 +21,7 @@ from itertools import chain
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 """
-def sorted_alphanumeric(data):
+def sorted_alphanumeric(data:list) -> list:
     convert = lambda text: int(text) if text.isdigit() else text.lower()
     alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ] 
     return sorted(data, key=alphanum_key)
@@ -36,11 +36,11 @@ def sorted_alphanumeric(data):
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 """
-def select_mach_1_file():
+def select_mach_1_file() -> str:
     pop_window = tkinter.Tk()
     pop_window.withdraw()
     pop_window.attributes('-topmost', True) 
-    filename = filedialog.askopenfilename(parent=pop_window, initialdir= "/", title='Please select the Mach-1 .txt file')
+    filename = filedialog.askopenfilename(parent = pop_window, initialdir= "/", title='Please select the Mach-1 .txt file')
     if len(filename) == 0 or not filename.endswith(".txt"):
         messagebox.showwarning("Warning", "No mach-1 file selected!")
         filename = None
@@ -51,32 +51,30 @@ def select_mach_1_file():
 % Description: Function that brings a pop up prompt to select a folder contaning 
 %              multiple mach-1 files.
 % Inputs:   keyword     -  String Name of group of mach-1 files to load in folder
-% Output:   filename    -  List of string addresses of the mach-1    
+% Output:   mach_1_sets    -  A 2 by N matrix where the first column corresponds to
+%                          to the directories of the files and the second column
+%                          corresponds to the filenames.  
 % 
 %   By: Renato Castillo, 29AUG2022
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 """
-def select_mach_1_files_dir(keyword=None):
-    mach_1_files = []
-    mach_1_dir = []
+def select_mach_1_files_dir(keyword:str = ""):
+    mach_1_dirs = []
     mach_1_fnames = []
     pop_window = tkinter.Tk()
     pop_window.withdraw()
     pop_window.attributes('-topmost', True) 
-    main_dir = filedialog.askdirectory(parent=pop_window, initialdir= "/", title='Please select the Mach-1 files directory')
+    main_dir = filedialog.askdirectory(parent = pop_window, initialdir= "/", title = 'Please select the Mach-1 files directory')
     try:
         print("Mach-1 files located at : " + main_dir)
         mach_1_files = sorted(filter(lambda x: os.path.isfile(os.path.join(main_dir, x)), os.listdir(main_dir)))
-        if keyword is None:
-            mach_1_dir = [os.path.join(main_dir, file) for file in mach_1_files if file.endswith(".txt")]
-        else:
-            mach_1_dir = [os.path.join(main_dir, file) for file in mach_1_files if file.endswith(".txt") and keyword in file.split(".")[0]]
-        mach_1_dir = sorted_alphanumeric(mach_1_dir)
-        mach_1_fnames = [file.split("\\")[-1].split(".")[0] for file in mach_1_dir] 
+        mach_1_dirs = sorted_alphanumeric([os.path.join(main_dir, file) for file in mach_1_files if file.endswith(".txt") and keyword in file])
+        mach_1_fnames = [file.split("\\")[-1].split(".")[0] for file in mach_1_dirs]
+
     except:
         print("No directory selected or directory does not exist...")
-    mach_1_sets =  [[mach_1_dir[i], mach_1_fnames[i]] for i in range(len(mach_1_fnames))]
+    mach_1_sets =  np.array([[mach_1_dirs[i], mach_1_fnames[i]] for i in range(len(mach_1_fnames))])
     return mach_1_sets
 """
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -118,7 +116,7 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
 def prepareData(dataframe, dataHeaders):
     df_Data = {}
     for idx, dataHeader in enumerate(dataHeaders):
-        df_Data[dataHeader.split(",")[0]] = dataframe.values[:,idx]
+        df_Data[dataHeader.split(",")[0]] = dataframe.values[:, idx]
     return df_Data
 """
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -168,6 +166,7 @@ def read_mach_1_file(filename, read_data = 1, data_headers_selection = None, sho
         raise ValueError("Incorrect file extension or file does not exist.")
     idxs_dividers = search_dividers_idx(filename, dividers) # row position of dividers in .txt file
     flag_data_separators, idxs_data_separators = check_data_separator(filename, idxs_dividers)
+    data_indexes = selectData(filename, idxs_dividers, 0, data_headers_selection)
     # Start to load data from Mach-1 file into dictionary
     dicFuncNames = {}
     for function in range(len(idxs_dividers)//4):
@@ -180,50 +179,41 @@ def read_mach_1_file(filename, read_data = 1, data_headers_selection = None, sho
             dicFuncNames[funcName] = 1
         currentFunc = funcName + "-{}".format(dicFuncNames[funcName])
         if read_data == 1:
-            dfDATA = {}
-            count = 0
-            if flag_data_separators[function] == False:
-                data_indexes = selectData(filename, idxs_dividers, function, data_headers_selection)
+            if not flag_data_separators[function]:
                 df = pd.read_csv(filename, sep="\t", skiprows = idxs_dividers[4*function+2], nrows=idxs_dividers[4*function+3]-idxs_dividers[4*function+2]-2, usecols=data_indexes, engine="c", na_filter=False, low_memory=False)
                 dataHeaders = df.columns.values
                 dfDATA = {"<DATA>" : prepareData(df, dataHeaders)}
-            if flag_data_separators[function] == True:
-                for separator in range(len(idxs_data_separators)):
-                    if idxs_data_separators[separator] > idxs_dividers[4*function+2] and idxs_data_separators[separator] < idxs_dividers[4*function+3]:
-                        if len(idxs_data_separators) == 1:
-                            data_indexes = selectData(filename, idxs_dividers, function, data_headers_selection)
-                            df = pd.read_csv(filename, sep="\t", skiprows = idxs_dividers[4*function+2], nrows=idxs_data_separators[separator]-idxs_dividers[4*function+2]-2, usecols=data_indexes, engine="c", na_filter=False, low_memory=False)
+            elif flag_data_separators[function]:
+                visited_dividers = [idxs_data_separators[-1]]
+                nSeparators = 0
+                dfData = {}
+                while idxs_data_separators[0] < idxs_dividers[4*function + 3]:
+                    if len(idxs_data_separators) == 1:
+                        df = pd.read_csv(filename, sep="\t", skiprows = idxs_dividers[4*function+2], nrows=idxs_data_separators[0]-idxs_dividers[4*function+2]-2, usecols=data_indexes, engine="c", na_filter=False, low_memory=False)
+                        dataHeaders = df.columns.values
+                        dfData['Ramp-{}'.format(nSeparators + 1)] = prepareData(df, dataHeaders)
+                        idxs_data_separators.pop(0)
+                        break
+                    else:
+                        if idxs_data_separators[0] > visited_dividers[-1]:
+                            df = pd.read_csv(filename, sep="\t", header = None, skiprows = visited_dividers[-1], nrows=idxs_data_separators[0]-visited_dividers[-1]-1, usecols=data_indexes, engine="c", na_filter=False, low_memory=False)
+                        else:
+                            df = pd.read_csv(filename, sep="\t", skiprows = idxs_dividers[4*function+2], nrows=idxs_data_separators[0]-idxs_dividers[4*function+2]-2, usecols=data_indexes, engine="c", na_filter=False, low_memory=False)
                             dataHeaders = df.columns.values
-                            data = {"<DATA>"  : {'Ramp-{}'.format(separator + 1): prepareData(df, dataHeaders)}}
-                            dfDATA.update(data)
-                            break
-                        if idxs_data_separators[separator - 1] > idxs_dividers[4*function + 2]: 
-                            if idxs_data_separators[separator -1] > idxs_dividers[4*function +3] or idxs_data_separators[separator - 1] + 1 == idxs_dividers[4*function + 3]:
-                                data_indexes = selectData(filename, idxs_dividers, function, data_headers_selection)
-                                df = pd.read_csv(filename, sep="\t", skiprows = idxs_dividers[4*function+2], nrows=idxs_data_separators[separator]-idxs_dividers[4*function+2]-2, usecols=data_indexes, engine="c", na_filter=False, low_memory=False)
-                                dataHeaders = df.columns.values
-                                data = {'<DATA>' : {'Ramp-{}'.format(separator + 1): prepareData(df, dataHeaders)}}
-                                dfDATA.update(data)
-                                count += 1
-                                if idxs_data_separators[separator + 1] > idxs_dividers[4*function+3]:
-                                    break
-                            elif idxs_data_separators[separator] > idxs_data_separators[separator - 1]:
-                                df = pd.read_csv(filename, sep="\t", header = None, skiprows = idxs_data_separators[separator-1], nrows=idxs_data_separators[separator]-idxs_data_separators[separator-1]-1, usecols=data_indexes, engine="c", na_filter=False, low_memory=False)
-                                data = {'Ramp-{}'.format(separator + 1):prepareData(df, dataHeaders)}
-                                dfDATA['<DATA>'].update(data)
-                                count += 1
-            for id in range(count):
-                del idxs_data_separators[0]
+                        dfData['Ramp-{}'.format(nSeparators + 1)] = prepareData(df, dataHeaders)
+                        visited_dividers.append(idxs_data_separators.pop(0))
+                    nSeparators += 1
+                dfDATA = {"<DATA>": dfData}
             dfINFO.update(dfFUNCTION)
             dfINFO.update(dfDATA)
             dM = {currentFunc : dfINFO}
-            dfMACH_1.update(dM) 
+            dfMACH_1.update(dM)
         else:
             dfINFO.update(dfFUNCTION)
             dM = {funcName : dfINFO}
             dfMACH_1.update(dM)
         if  showProgressBar:
-            printProgressBar(function, len(idxs_dividers)//4 - 1, prefix='Progress:', suffix='Complete', length=50)
+            printProgressBar(function, len(idxs_dividers)//4 - 1, prefix='Progress:', suffix='Complete', length=50)            
     return dfMACH_1
 """
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -264,7 +254,7 @@ def read_mach_1_files(read_data = 1, data_headers_selection = None, keyword=None
     mach_1_sets = select_mach_1_files_dir(keyword)
     if len(mach_1_sets) > 0:
         if multiproc:
-            for mach_1_set in mach_1_sets:
+            for mach_1_set in list(mach_1_sets):
                 mach_1_set.append(read_data)
                 mach_1_set.append(data_headers_selection)
                 mach_1_set.append(showProgressBar) 
@@ -278,10 +268,10 @@ def read_mach_1_files(read_data = 1, data_headers_selection = None, keyword=None
             for index in range(len(mach_1_sets)):
                 print("Loading: " + mach_1_sets[index][1])
                 if data_headers_selection is not None:
-                    dfMACH_1s[mach_1_sets[index][1]] = read_mach_1_file(mach_1_sets[index][0], read_data, data_headers_selection)
+                    dfMACH_1s[mach_1_sets[index, 1]] = read_mach_1_file(mach_1_sets[index, 0], read_data, data_headers_selection, showProgressBar)
                 else:
-                    dfMACH_1s[mach_1_sets[index][1]] = read_mach_1_file(mach_1_sets[index][0], read_data)
-            mach_1_dir = os.path.dirname(mach_1_sets[0][0])
+                    dfMACH_1s[mach_1_sets[index, 1]] = read_mach_1_file(mach_1_sets[index, 0], read_data, showProgressBar=showProgressBar)
+            mach_1_dir = os.path.dirname(mach_1_sets[0, 0])
     else:
         messagebox.showwarning("Warning", "No mach-1 files found!")
     return dfMACH_1s, mach_1_dir
@@ -325,9 +315,8 @@ def search_dividers(mach_1_file, divider):
 def search_dividers_idx(filename, dividers):
     indexes_file = []
     for divider in dividers:
-        indexes_file.append(search_dividers(filename, divider))
-    indexes_file = list(chain.from_iterable(indexes_file))
-    indexes_file = sorted(indexes_file)
+        indexes_file += search_dividers(filename, divider)
+    indexes_file.sort()
     return indexes_file
 """
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -345,25 +334,28 @@ def search_dividers_idx(filename, dividers):
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 """
-def check_data_separator(mach_1_file, idxs_dividers):
+def check_data_separator(mach_1_file, index_dividers):
     indexes = []
     flag_dividers = []
+    flag_divider = False
     with open(mach_1_file) as file:
-        flag_divider = False
-        for idx, line in enumerate(file, 1):
+        for id_line, line in enumerate(file, 1):
             if "<divider>" in line:
-                indexes.append(idx)
-    for ix in range(len(idxs_dividers)//4):
+                indexes.append(id_line)
+    
+    for idx in range(len(index_dividers)//4):
         if len(indexes) > 0:
             for idy in indexes:
-                if idy > idxs_dividers[4*ix+2] and idy < idxs_dividers[4*ix+3]:
+                if idy > index_dividers[4*idx+2] and idy < index_dividers[4*idx+3]:
                     flag_divider = True
                     break
             flag_dividers.append(flag_divider)
             flag_divider = False
+            
         else:
             flag_dividers.append(False)
     return flag_dividers, indexes
+
 
 
     

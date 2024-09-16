@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 from HayesElasticModel_PYTH import *
 from Sinus_Analysis_PYTH import *
 from read_mach_1_file_PYTH import read_mach_1_file, read_mach_1_files, select_mach_1_file
+from Stress_Relaxation_Fit_PYTH import *
 #%%
 ####################################### FUNCTIONS #######################################
 """
@@ -165,5 +166,60 @@ print("Phase lag (deg): ", np.round(delta_deg,6))
 print("Residual Standard Error Position-z (mm): ", np.round(ser_posZ,6))
 print("Residual Standard Error Force-z (N): ", np.round(ser_Fz,6))
 print("===============================================")
+#%%
+# Testing Stress-Relaxation Analysis
+mach_1_data = read_mach_1_file(select_mach_1_file())
+#%%
+plt.switch_backend('tkagg')
+function = "Stress Relaxation-2"
+D = 4.8 # Diameter of the cartilage upon extraction, mm
+Strain = 2.5 # 2.5 percent strain / ramp
+initialStrain = 10 # 10 percent strain precompression
+vm = 0.36 # Poisson's ration (between 0 - 0.5) from litterature 0.36 (Garon 2007)
+units_gf = "Single" in mach_1_data[function]["<INFO>"]["Load Cell Type:"]
+fig, ax = plt.subplots()
+for nRamp, ramp in enumerate(mach_1_data[function]["<DATA>"].values()):
+    Fz = -ramp["Fz"]
+    if units_gf:
+        Fz = -Fz*0.00980665
+    Time = ramp["Time"]
+    sigZ = Fz/(np.pi * (D/2)**2)
+    tau = relaxation_constant(Fz, Time, np.argmax(Fz))
+    szfit, efibril, k0, e33_eq, t0, S11, szequ, K, tau_fit, em, nm, mse, veff_poisson = stressrelaxation_fit(Time, sigZ, D/2, Strain/100, vm)
+    ax.plot(Time, sigZ, "-b")
+    if nRamp == 0:
+        ax.plot(Time, szfit, "--r", label = "Fit")
+    else:
+        ax.plot(Time, szfit, "--r")
+    ax.relim()
+    ax.set_ylabel("Stress (MPa)",size=20)
+    ax.set_xlabel("Time (s)",size=20)
+    ax.tick_params(axis='both', which='major', labelsize=20)
+    ax.autoscale_view()
+    plt.draw()
+    plt.pause(0.5)
+    print("===============================================")
+    print(f"RAMP-{nRamp + 1}")
+    print("Fibril Network Modulus (MPa): ", np.round(efibril, 4))
+    print("Hydraulic Permeability " + '(µm{})'.format(get_super('2')) + "/[MPa*s]: ", np.round(k0,4))
+    print("Poisson Ratio at Equilibrium: ", np.round(veff_poisson,4))
+    print("Root Mean Squared Error of Fit (MPa): ", np.round(np.sqrt(mse), 4))
+    print("Relaxation Constant (s): ", np.round(tau, 4))
+    print("=============================================== \n")
+plt.grid()
+plt.legend(loc = 'lower right', fontsize = 20)
+plt.show()  
+
+
+
+
+
+
+
+
+
+
+
+
 
 
