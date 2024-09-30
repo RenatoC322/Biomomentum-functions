@@ -13,12 +13,16 @@ clear_all()
 #%%
 ####################################### Import useful librairies into the workspace #######################################
 import os
+import cv2
 import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
+
+from matplotlib.patches import Polygon
 from HayesElasticModel_PYTH import *
 from Sinus_Analysis_PYTH import *
 from read_mach_1_file_PYTH import read_mach_1_file, read_mach_1_files, select_mach_1_file
 from Stress_Relaxation_Fit_PYTH import *
+from Analysis_Map_file_PYTH import select_files_dir, get_subSurfaces, interpolateMAP
 #%%
 ####################################### FUNCTIONS #######################################
 """
@@ -209,8 +213,64 @@ for nRamp, ramp in enumerate(mach_1_data[function]["<DATA>"].values()):
 plt.grid()
 plt.legend(loc = 'lower right', fontsize = 20)
 plt.show()  
+#%%
+# Analysis MAP 
+dpath, files = select_files_dir()
+#%%
+index = 13
+print("Opened file: ", files[index])
+subSurfaces = get_subSurfaces(dpath[index])
+#%%
+surface_1 = subSurfaces["QP"]
+surface_2 = subSurfaces["QP_2"]
+pos_1 = np.array(surface_1["Position"])
+pos_2 = np.array(surface_2["Position"])
+pos_1_ID = surface_1["Position ID"]
+pos_2_ID = surface_2["Position ID"]
+#%%
+fig = plt.figure()
+axes = fig.add_subplot(111)
+img_MAP = cv2.cvtColor(cv2.imread(subSurfaces["MAP-Info"]["Image directory"]), cv2.COLOR_BGR2RGB)
+poly_1 = Polygon(np.array(surface_1["Bounds"]), color = "Black", fill = False, linewidth = 2, label = "QP")
+poly_2 = Polygon(np.array(surface_2["Bounds"]), color = "Blue", fill = False, linewidth = 2, label = "QP_2")
+axes.imshow(img_MAP)
+axes.add_patch(poly_1)
+axes.scatter(pos_1[:,0].reshape(1,len(pos_1)), pos_1[:,1].reshape(1,len(pos_1)), color = "Black", s = 60)
+axes.add_patch(poly_2)
+axes.scatter(pos_2[:,0].reshape(1,len(pos_2)), pos_2[:,1].reshape(1,len(pos_2)), color = "Blue", s = 60)
+for i, txt in enumerate(pos_1_ID):
+    axes.annotate(txt, (pos_1[i, 0], pos_1[i, 1]), (pos_1[i, 0] + 20, pos_1[i, 1] + 20), fontsize = 20)
+for i, txt in enumerate(pos_2_ID):
+    axes.annotate(txt, (pos_2[i, 0], pos_2[i, 1]), (pos_2[i, 0] + 20, pos_2[i, 1] + 20), fontsize = 20)
 
-
+plt.axis('off')
+plt.legend()
+plt.show()
+#%%
+index = 4
+print("Opened file: ", files[index])
+subSurfaces = get_subSurfaces(dpath[index], "QP_Mean")
+#%%
+img_MAP = cv2.cvtColor(cv2.imread(subSurfaces["MAP-Info"]["Image directory"]), cv2.COLOR_BGR2RGB)
+surface_1 = subSurfaces["QP"]
+pos_1 = np.array(surface_1["Position"])
+pos_1_ID = surface_1["Position ID"]
+QP = np.array(surface_1["QP_Mean"])
+boundary = np.array(surface_1["Bounds"])
+all_pos = np.vstack((pos_1, boundary))
+#%%
+QP_2D, triangles, grid_X, grid_Y = interpolateMAP(subSurfaces, True, 'QP_Mean')
+#%%
+vmin, vmax = 7, 18
+poly_1 = Polygon(np.array(surface_1["Bounds"]), color = "Black", fill = False, linewidth = 2, label = "QP")
+fig = plt.figure()
+axes = fig.add_subplot(111)
+im = axes.imshow(img_MAP)
+pcm = axes.pcolormesh(grid_X, grid_Y, QP_2D, shading='auto', cmap="jet", alpha = 0.5, vmin=vmin, vmax=vmax)
+axes.add_patch(poly_1)
+fig.colorbar(pcm, ax=axes)
+plt.axis('off')
+plt.show()    
 
 
 

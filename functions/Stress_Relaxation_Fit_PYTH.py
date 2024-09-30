@@ -69,7 +69,6 @@ def relaxation_constant_v2(data, time, startIdx):
     return tau
 def stressrelaxation_fit(t, sz, r0, e0, vm, t0in = None, filemat = None):
     """
-
     Function to fit stree relaxation curves.
 
     Parameters
@@ -96,7 +95,6 @@ def stressrelaxation_fit(t, sz, r0, e0, vm, t0in = None, filemat = None):
     em    :    Elastic Modulus of isotropic matrix (MPa)
     nm    :    Poisson coefficient of isotropic matrix
     mse   :    Mean quadratic error                            
-
     """
     if filemat is None:
         filemat = os.path.join(os.getcwd(),"sveff_tab.mat")
