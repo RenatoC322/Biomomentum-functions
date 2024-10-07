@@ -38,6 +38,7 @@ def sorted_alphanumeric(data):
 """
 def select_mach_1_file():
     pop_window = tkinter.Tk()
+    pop_window.iconbitmap(os.getcwd() + r"\ICON.ico")
     pop_window.withdraw()
     pop_window.attributes('-topmost', True) 
     filename = filedialog.askopenfilename(parent=pop_window, initialdir= "/", title='Please select the Mach-1 .txt file')
@@ -164,7 +165,7 @@ def read_mach_1_file(filename, read_data = 1, data_headers_selection = None, sho
     # Dividers used to separate steps in .txt file
     dividers = ["<INFO>","<END INFO>","<DATA>","<END DATA>"]
     # Verify the file is valid and Mach-1 file
-    if not os.path.exists(filename) and not filename.endswith(".txt"):
+    if not filename or not os.path.exists(filename) and not filename.endswith(".txt"):
         raise ValueError("Incorrect file extension or file does not exist.")
     idxs_dividers = search_dividers_idx(filename, dividers) # row position of dividers in .txt file
     flag_data_separators, idxs_data_separators = check_data_separator(filename, idxs_dividers)
