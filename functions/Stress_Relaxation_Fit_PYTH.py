@@ -7,7 +7,7 @@ import scipy as sp
 import os
 
 def funfminsearch(tau, x, yy, t1, t2, t0, sz1, w):
-    szm = sp.interpolate.interp1d(x[0], np.log10(yy),fill_value="extrapolate")
+    szm = sp.interpolate.interp1d(x[0], np.log10(yy), fill_value="extrapolate")
     sz21a = 10**szm(t1/tau)
     sz21 = 0.125 - sz21a
     sz22a = 10**szm((t2-t0)/tau)
@@ -59,6 +59,7 @@ def relaxation_constant(data, time, startIdx):
     lc = np.argmax(data[startIdx:] - data[-1] < np.exp(-1)*abs(dataRange)) + startIdx
     tau = time[lc] - time[startIdx]
     return tau
+
 def relaxation_constant_v2(data, time, startIdx):
     dataRange = data[startIdx] - data[-1]
     
