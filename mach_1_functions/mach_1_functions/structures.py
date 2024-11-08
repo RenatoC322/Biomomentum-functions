@@ -8,7 +8,7 @@ import concurrent.futures
 from tkinter import filedialog, messagebox
 from itertools import chain
 
-from utils import sorted_alphanumeric, printProgressBar, inDict
+from .utils import sorted_alphanumeric, printProgressBar, inDict
 
 def select_data_file(file_extension = ".txt"):
     """

@@ -1,6 +1,9 @@
 import re
 import numpy as np
 
+from scipy.spatial import Delaunay
+from scipy.interpolate import LinearNDInterpolator, Rbf
+
 def sorted_alphanumeric(files):
     """
     Sorts alpha numerically files from directory.
@@ -171,3 +174,35 @@ def linear_least_square(x,y):
     Rsq = 1 - mse/np.var(Y)
     Rsq_adj = 1 - (1 - Rsq)*(N - 1)/(N - poly_order - 1)
     return A, curveFit, Rsq_adj
+
+def interpolateMAP(subSurfaces, interpolate_to_bounds = False, keyword = ""):
+    """
+    Function to apply 2D linear interpolation into the data
+
+    Args:
+        subSurfaces :           Dictionary of all the surfaces identified in the MAP file
+        interpolate_to_bounds : Flag to indicate whether to extrapolate values to surface bounds
+        keyword :           Name given to the measurements in the MAP file
+    
+    Returns:
+        QP_2D :  2D array of the interpolated values into the subSurface
+        triangles : Triangles used for the interpolation
+        grid_X : 2D array of the X values used to construct the interpolation
+        grid_Y : 2D array of the Y values used to construct the interpolation
+    """
+    surface_1 = subSurfaces["QP"]
+    pos = np.array(surface_1["Position"])
+    QP = np.array(surface_1[keyword])
+    boundary = np.array(surface_1["Bounds"])
+    grid_X, grid_Y = np.meshgrid(np.linspace(min(pos[:, 0]), max(pos[:, 0]), int(np.ptp(pos[:, 0]))),
+                                 np.linspace(min(pos[:, 1]), max(pos[:, 1]), int(np.ptp(pos[:, 1]))))
+    if interpolate_to_bounds:
+        rbf_interpolator = Rbf(pos[:,0], pos[:,1], QP, function='linear')
+        QP = np.hstack((QP, rbf_interpolator(boundary[:,0], boundary[:, 1])))
+        pos = np.vstack((pos, boundary))
+        grid_X, grid_Y = np.meshgrid(np.linspace(min(pos[:, 0]), max(pos[:, 0]), int(np.ptp(pos[:, 0]))),
+                                     np.linspace(min(pos[:, 1]), max(pos[:, 1]), int(np.ptp(pos[:, 1]))))
+    interpolator = LinearNDInterpolator(pos, QP)
+    QP_2D = interpolator(grid_X, grid_Y)
+    triangles = Delaunay(pos)
+    return QP_2D, triangles, grid_X, grid_Y

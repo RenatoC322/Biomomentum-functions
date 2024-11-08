@@ -2,7 +2,7 @@ import numpy as np
 import scipy as sp
 import os
 
-from utils import isNegative, check_data, ResidualStandardError, rsquared, linear_least_square
+from .utils import isNegative, check_data, ResidualStandardError, rsquared, linear_least_square
 
 def compliance_correction(displacement, load, criteria = 1, interval = None):
     """
