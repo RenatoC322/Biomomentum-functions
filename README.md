@@ -10,7 +10,7 @@ this library, it recommended to use conda environments.
 4. Copy the directory of the WHL file and run the following command:
 > pip install /directory/.../.whl
 5. Import the library into a Python script or notebook:
-> Import mach_1_functions
+> Import biomomentum
 
 ## Documentation
 Each python file in the /mach_1_functions/mach_1_functions directory contains descriptions of each function.
