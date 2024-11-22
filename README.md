@@ -1,17 +1,36 @@
-![© Biomomentum Inc - All rights reserved](LOGO.png)
+![](LOGO.png)
+<p align="right">© Biomomentum Inc - All rights reserved</p>
+
 # Biomomentum-functions
 This repository contains multiple python scripts used for data analysis in mechanical testing with mach-1 testers from Biomomentum. To use
 this library, it recommended to use conda environments.
 ## Installation
-1. Create a new environments using the following command on an Anaconda command prompt (use python 3.11 for most stable release): 
+1. Install [Anaconda](https://www.anaconda.com/download/success) on your computer.
+2. Open *Anaconda Powershell Prompt* by searching in the taskbar.
+3. Create a new environment using the following command on an *Anaconda Powershell Prompt* (use python 3.11 for most stable release): 
 > conda create --name env python=3.11
-2. From the /dist directory, download the WHL file
-3. Activate the newly created environment:
+3. From the /dist directory of this repository, download the WHL file
+4. Activate the newly created environment:
 > conda activate env
-4. Copy the directory of the WHL file and run the following command:
-> pip install /directory/.../.whl
-5. Import the library into a Python script or notebook:
+5. Copy the directory of the WHL file and run the following command:
+> pip install "copy directory of WHL file downloaded"
+6. Import the library into a Python script or notebook:
 > Import biomomentum
+
+## Testing
+A jupyter notebook is provided for testing some functions. Follow these steps to try out the notebook on your computer.
+1. Open *Anaconda Powershell Prompt* by searching in the taskbar.
+2. Activate the newly created environment:
+> conda activate env
+3. Install **jupyter package** in the created environment using
+> conda install jupyter
+4. Install **matplotlib package** in the created environment using
+> conda install matplotlib
+5. Install **Open-cv package** in the created environment using
+> conda install -c conda-forge opencv
+6. Download and install [VsCode](https://code.visualstudio.com/download)
+7. On the left tab of the software go to extensions and download Python and Jupyter.
+8. Download the folder \examples to test the library.
 
 ## Documentation
 The following section presents each function incorporated into the *biomomentum* Python library.
