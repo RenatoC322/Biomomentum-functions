@@ -289,5 +289,5 @@ Returns:
 - `data_extra` *np.array* - Data trimmed if flag passed (for plotting) for data_1.
 - `data_extra_2` *np.array* - Data trimmed if flag passed (for plotting) for data_2 (if passed in arguments).
 - `ser_data` *float* - Residual standard error of the fit for data_1.
-- `ser_data_@` *float* - Residual standard error of the fit for data_2 (if passed in arguments).
+- `ser_data_2` *float* - Residual standard error of the fit for data_2 (if passed in arguments).
 
