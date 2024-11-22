@@ -1,3 +1,4 @@
+![](LOGO.png)
 # Biomomentum-functions
 This repository contains multiple python scripts used for data analysis in mechanical testing with mach-1 testers from Biomomentum. To use
 this library, it recommended to use conda environments.
