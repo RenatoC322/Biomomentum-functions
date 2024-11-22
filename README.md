@@ -231,7 +231,7 @@ Returns:
 ```python
 def stressrelaxation_fit(t, sz, r0, e0, vm, t0in = None, filemat = None
 ```
-Extracts Elastic Properties from Indentation.
+Function to fit stress relaxation curves and extract mechanical properties.
 
 Arguments:
 - `t` *np.array* - Data array (s).
@@ -257,17 +257,37 @@ Returns:
 - `mse` *float* - Mean quadratic error .
   
 ### Dynamic_analysis
-#### compute_stats
+#### FitSinusoid
 ```python
-def compute_stats(x: np.ndarray, y: np.ndarray) -> dict
+def FitSinusoid(time, freq, data_1, data_2 = None, method = "trf", lossType = "soft_l1", fscale = 0.001, trim_data = False)
 ```
-Add function description.
+Sinusoid fit on data using least-squares and extract dynamic modulus.
 
 Arguments:
-- `x` *np.array* - Data series 1.
-- `y` *np.array* - Data series 2.
+- `time` *np.array* - time vector (s).
+- `freq` *float* - frequency guess (Hz).
+- `data_1` *np.array* - data vector (data units) .
+- `data_2` *np.array* - data vector (data units) to sync with data_1 (None by default).
+- `method` *np.array* - method for the least-squares ([least_squares](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html)).
+- `lossType` *np.array* - loss for the method applied ([least_squares](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html)).
+- `fscale` *np.array* - weight for the loss function ([least_squares](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html)).
+- `trim_data` *bool* - bool to indicate whether to trim the data or not.
   
 Returns:
-- `filename` *str* - Directory of the selected file.
-
+- `Params` *structure* - If data_2 is not given then.
+  - `Params[0]` *float* - Sin offset of data_1.
+  - `Params[1]` *float* - Sin amplitude of data_1.
+  - `Params[2]` *float* - Sin frequency of data_1.
+  - `Params[3]` *float* - Sin phase of data_1.
+- `Params` *structure* - If data_2 is given then.
+  - `Params[2]` *float* - Sin frequency of data_1 and data_2.
+  - `Params[4]` *float* - Sin offset of data_2.
+  - `Params[5]` *float* - Sin amplitude of data_2.
+  - `Params[6]` *float* - Sin phase of data_2.
+- `data_sin ` *np.array* - Sin fit into data_1.
+- `data_sin_2 ` *np.array* - Sin fit into data_2 (if passed in arguments).
+- `data_extra` *np.array* - Data trimmed if flag passed (for plotting) for data_1.
+- `data_extra_2` *np.array* - Data trimmed if flag passed (for plotting) for data_2 (if passed in arguments).
+- `ser_data` *float* - Residual standard error of the fit for data_1.
+- `ser_data_@` *float* - Residual standard error of the fit for data_2 (if passed in arguments).
 
