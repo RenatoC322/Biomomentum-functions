@@ -13,4 +13,5 @@ this library, it recommended to use conda environments.
 > Import biomomentum
 
 ## Documentation
-Each python file in the /mach_1_functions/mach_1_functions directory contains descriptions of each function.
+Each python file in the /biomomentum/functions directory contains descriptions of each function.
+
