@@ -3,6 +3,7 @@ import numpy as np
 
 from scipy.spatial import Delaunay
 from scipy.interpolate import LinearNDInterpolator, Rbf
+from sklearn.preprocessing import MinMaxScaler
 
 def sorted_alphanumeric(files):
     """
@@ -191,23 +192,31 @@ def interpolateMAP(subSurfaces, interpolate_to_bounds = False, smooth_data = Fal
         grid_X : 2D array of the X values used to construct the interpolation
         grid_Y : 2D array of the Y values used to construct the interpolation
     """
-    surface_1 = subSurfaces["QP"]
-    pos = np.array(surface_1["Position"])
-    QP = np.array(surface_1[keyword])
-    boundary = np.array(surface_1["Bounds"])
-    grid_X, grid_Y = np.meshgrid(np.linspace(min(pos[:, 0]), max(pos[:, 0]), int(np.ptp(pos[:, 0]))),
-                                 np.linspace(min(pos[:, 1]), max(pos[:, 1]), int(np.ptp(pos[:, 1]))))
-    if interpolate_to_bounds:
-        rbf_interpolator = Rbf(pos[:,0], pos[:,1], QP, function='linear')
-        QP = np.hstack((QP, rbf_interpolator(boundary[:,0], boundary[:, 1])))
-        pos = np.vstack((pos, boundary))
-        grid_X, grid_Y = np.meshgrid(np.linspace(min(pos[:, 0]), max(pos[:, 0]), int(np.ptp(pos[:, 0]))),
-                                     np.linspace(min(pos[:, 1]), max(pos[:, 1]), int(np.ptp(pos[:, 1]))))
-    triangles = Delaunay(pos)
-    if smooth_data:
-        QP = smoothMAP(QP, triangles, threshold)
-    interpolator = LinearNDInterpolator(pos, QP)
-    QP_2D = interpolator(grid_X, grid_Y)
+    QP_2D, triangles, grid_X, grid_Y = [], [], [], []
+    for surface in subSurfaces:
+        if surface not in ["MAP-Info", "references"]:
+            surface_1 = subSurfaces[surface]
+            pos = np.array(surface_1["Image Position"])
+            QP = np.array(surface_1[keyword])
+            boundary = np.array(surface_1["Bounds"])
+            grid_x, grid_y = np.meshgrid(np.linspace(min(pos[:, 0]), max(pos[:, 0]), int(np.ptp(pos[:, 0]))),
+                                         np.linspace(min(pos[:, 1]), max(pos[:, 1]), int(np.ptp(pos[:, 1]))))
+            if interpolate_to_bounds:
+                rbf_interpolator = Rbf(pos[:,0], pos[:,1], QP, function='linear')
+                QP = np.hstack((QP, rbf_interpolator(boundary[:,0], boundary[:, 1])))
+                pos = np.vstack((pos, boundary))
+                grid_x, grid_y = np.meshgrid(np.linspace(min(pos[:, 0]), max(pos[:, 0]), int(np.ptp(pos[:, 0]))),
+                                             np.linspace(min(pos[:, 1]), max(pos[:, 1]), int(np.ptp(pos[:, 1]))))
+            triangle = Delaunay(pos)
+            if smooth_data:
+                QP = smoothMAP(QP, triangle, threshold)
+            interpolator = LinearNDInterpolator(pos, QP)
+            QP_2d = interpolator(grid_x, grid_y)
+            QP_2D.append(QP_2d)
+            triangles.append(triangle)
+            grid_X.append(grid_x)
+            grid_Y.append(grid_y)
+            
     return QP_2D, triangles, grid_X, grid_Y
 
 def smoothMAP(QP, triangles, threshold):
@@ -238,3 +247,16 @@ def smoothMAP(QP, triangles, threshold):
         if std_neighbor < threshold:
             smoothed_map[id] = mean_neighbor
     return smoothed_map
+
+def normalize_signal(signal):
+    """
+    Function to normalize signals 
+
+    Args:
+        Signal : Data to be normalize
+    
+    Returns:
+        Signal normalized 
+    """
+    scaler = MinMaxScaler()
+    return scaler.fit_transform(signal.reshape(-1, 1)).flatten()

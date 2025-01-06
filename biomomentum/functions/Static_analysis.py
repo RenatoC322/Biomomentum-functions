@@ -2,7 +2,9 @@ import numpy as np
 import scipy as sp
 import os
 
-from .utils import isNegative, check_data, ResidualStandardError, rsquared, linear_least_square
+from scipy.signal import find_peaks, savgol_filter
+from scipy.ndimage import gaussian_filter
+from .utils import isNegative, check_data, ResidualStandardError, rsquared, linear_least_square, normalize_signal
 
 def compliance_correction(displacement, load, criteria = 1, interval = None):
     """
@@ -310,3 +312,42 @@ def stressrelaxation_fit(t, sz, r0, e0, vm, t0in = None, filemat = None):
     nm = (ef + e33)*veff/emnmd
     mse = se/np.sum(w)
     return szfit, ef, k0, e33, t0, S11, szequ, K, tau, em, nm, mse, veff
+
+def get_cartilage_index(Fz, Time):
+    """
+    Function to extract cartilage index from signal
+
+    Args:
+        Fz (np.array) : Normal force from automatic thickness indentation
+        Time (np.array) : Time data from mach-1 (s)
+    
+    Returns:
+        index_interest_mean (np.array): Begin and end of cartilage layer of surface
+    """
+    Fz_filter_1 = savgol_filter(Fz, window_length = 50, polyorder = 3)
+    Fz_filter_2_norm = gaussian_filter(normalize_signal(Fz), 9)
+    min_index = np.argmin(Fz)
+    diff_Fz_filter_1 = np.diff(Fz_filter_1[:min_index])
+    
+    index_1 = np.where(diff_Fz_filter_1 < -1.5e-4)[0][0]
+    Fz_filter_1_dt = np.gradient(Fz_filter_1[:min_index], Time[1] - Time[0])
+    dFz_filter = savgol_filter(Fz_filter_1_dt, window_length=50, polyorder=3)
+    dFz2_dt2_filter_1 = np.gradient(dFz_filter, Time[1] - Time[0])
+    
+    p_s_filt_1 = -dFz2_dt2_filter_1[index_1:min_index]
+    norm_filt_1 = p_s_filt_1/np.max(p_s_filt_1)
+    minima_indices, _ = find_peaks(norm_filt_1, height = 0.5)
+    index_interest_1 = np.array([index_1, index_1 + minima_indices[0]])
+    
+    dFz_dt_gauss_norm = np.gradient(Fz_filter_2_norm[:min_index], Time[1] - Time[0])
+    dFz_dt_gauss_filt_norm = savgol_filter(dFz_dt_gauss_norm, window_length=50, polyorder=3)
+    dFz2_dt2_gauss_norm = np.gradient(dFz_dt_gauss_filt_norm, Time[1] - Time[0])
+    dFz2_dt2_gauss_filt_norm = savgol_filter(dFz2_dt2_gauss_norm, window_length=50, polyorder=3)
+
+    index_2 = np.where(-dFz_dt_gauss_filt_norm >= 1e-2)[0][0]
+    p_s_gauss_norm = -dFz2_dt2_gauss_filt_norm[index_2:min_index]
+    norm_gauss_norm = p_s_gauss_norm/np.max(p_s_gauss_norm)
+    minima_indices_gauss_norm, _ = find_peaks(norm_gauss_norm, height = 0.5)
+    index_interest_2 = np.array([index_2, index_2 + minima_indices_gauss_norm[0] - 5])
+    index_interest_mean = np.mean(np.vstack((index_interest_1, index_interest_2)), axis=0).astype('int')
+    return index_interest_mean

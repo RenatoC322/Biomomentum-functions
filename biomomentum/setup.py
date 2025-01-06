@@ -6,9 +6,10 @@ setup(
     install_requires=[
         "numpy",
         "pandas",
-        "scipy"
+        "scipy",
+        "scikit-learn"
     ],
-    version='0.1.2',
+    version='0.1.3',
     description='Mach-1 Analysis Functions',
     author='Renato Castillo',
     author_email="castillo.renato@biomomentum.com"
