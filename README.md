@@ -117,10 +117,10 @@ Arguments:
 - `keyword` *str* - Name given to the measurements in the MAP file.
   
 Returns:
-- `QP_2D` *np.array* - 2D array of the interpolated values into the subSurface.
-- `triangles` *scipy.Delaunay* - Triangles used for the interpolation (see [Delaunay](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.Delaunay.html#scipy.spatial.Delaunay)).
-- `grid_X` *np.array* - 2D array of the X values used to construct the interpolation.
-- `grid_Y` *np.array* - 2D array of the Y values used to construct the interpolation.
+- `QP_2D` *list of np.array* -   List of 2D array of the interpolated values into the subSurface.
+- `triangles` *list of scipy.Delaunay* - List of Triangles used for the interpolation (see [Delaunay](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.Delaunay.html#scipy.spatial.Delaunay)).
+- `grid_X` *list of np.array* - List of 2D array of the X values used to construct the interpolation.
+- `grid_Y` *list of np.array* - List of 2D array of the Y values used to construct the interpolation.
 
 #### smoothMAP
 ```python
@@ -182,13 +182,14 @@ Returns:
 
 #### get_subSurfaces
 ```python
-def get_subSurfaces(MAP_file, keyword = "") -> dict
+def get_subSurfaces(MAP_file, keyword = "", scanFlag = False) -> dict
 ```
 Function to separate surfaces from MAP in dictionary.
 
 Arguments:
 - `MAP_file` *str* - Map file directory.
 - `keyword` *str* - Name given to the measurements in the MAP file.
+- `scanFlag` *bool* - Indicate whether MAP file contains scan data
   
 Returns:
 - `subSurfaces` *dict* - Dictionary of all the surfaces identified in the MAP file.
@@ -275,6 +276,19 @@ Returns:
 - `em` *float* - Elastic Modulus of isotropic matrix (MPa).
 - `nm` *float* - Poisson coefficient of isotropic matrix.
 - `mse` *float* - Mean quadratic error .
+
+#### get_cartilage_index
+```python
+def get_cartilage_index(Fz, Time) -> np.array
+```
+Function to extract cartilage index from signal
+
+Arguments:
+- `Fz` *np.array* - Normal force from automatic thickness indentation.
+- `Time` *np.array* - Time (s).
+  
+Returns:
+- `index_interest_mean` *np.array* - Begin and end of cartilage layer of surface.
   
 ### Dynamic_analysis
 #### FitSinusoid
