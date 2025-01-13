@@ -1,5 +1,6 @@
 import re
 import numpy as np
+import cv2
 
 from scipy.spatial import Delaunay
 from scipy.interpolate import LinearNDInterpolator, Rbf
@@ -212,11 +213,17 @@ def interpolateMAP(subSurfaces, interpolate_to_bounds = False, smooth_data = Fal
                 QP = smoothMAP(QP, triangle, threshold)
             interpolator = LinearNDInterpolator(pos, QP)
             QP_2d = interpolator(grid_x, grid_y)
+            if interpolate_to_bounds:
+                boundary -= np.min(boundary, axis = 0)
+                M, N = QP_2d.shape
+                mask = np.zeros((M, N))
+                boundary = boundary.reshape((-1, 1, 2))
+                cv2.fillPoly(mask, [boundary], 1)
+                QP_2d = np.where(mask == 1, QP_2d, np.nan)
             QP_2D.append(QP_2d)
             triangles.append(triangle)
             grid_X.append(grid_x)
-            grid_Y.append(grid_y)
-            
+            grid_Y.append(grid_y)          
     return QP_2D, triangles, grid_X, grid_Y
 
 def smoothMAP(QP, triangles, threshold):
