@@ -26,11 +26,9 @@ A jupyter notebook is provided for testing some functions. Follow these steps to
 > conda install jupyter
 4. Install **matplotlib package** in the created environment using
 > conda install matplotlib
-5. Install **Open-cv package** in the created environment using
-> conda install -c conda-forge opencv
-6. Download and install [VsCode](https://code.visualstudio.com/download)
-7. On the left tab of the software go to extensions and download Python and Jupyter.
-8. Download the folder \examples to test the library.
+5. Download and install [VsCode](https://code.visualstudio.com/download)
+6. On the left tab of the software go to extensions and download Python and Jupyter.
+7. Download the folder \examples to test the library.
 
 ## Documentation
 The following section presents each function incorporated into the *biomomentum* Python library.
