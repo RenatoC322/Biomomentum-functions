@@ -68,7 +68,36 @@ def Hayes_Model(w0,h,R,v):
     K = A2*(a/h)**2 + B2*(a/h) +C2 # compute Kappa
     return a, K
 
-def HayesElasticModel(posZ, loadZ, gf_flag, maxStrain, R, v, Rsq_req, sampleThickness = None, origin_set=False, eqModulus=False):
+def Hayes_Model_Cylinder(h,R,v):
+    """
+    Extracts Hayes Model Coefficients for Cylindrical Indenter
+
+    Args:
+        h (float): Sample thickness.
+        R (float): Indenter radius.
+        v (float): Poisson's ratio.
+
+    Returns:
+        a (float): Hayes coefficient
+        K (float): Kappa coefficient.
+    """
+    # Data extracted from Hayes1972
+    if v == 0.3:
+        A1, B1, C1 = (0.005,1.8194,0.714)
+    elif v == 0.35:
+        A1, B1, C1 = (0.0111,2.0306,0.6405)
+    elif v == 0.4:
+        A1, B1, C1 = (0.0312,2.3921,0.4873)
+    elif v == 0.45:
+        A1, B1, C1 = (0.1277,3.026,0.1436)
+    else:
+        A1, B1, C1 = (2.3919,2.6051,3.2863)
+    a = R  
+    # Compute a and K to get G and E
+    K = A1*(a/h)**2 + B1*(a/h) +C1 # compute Kappa
+    return a, K
+
+def HayesElasticModel(posZ, loadZ, gf_flag, maxStrain, R, v, Rsq_req, sampleThickness = None, origin_set=False, eqModulus=False, spherical_indenter=False):
     """
     Extracts Elastic Properties from Indentation
 
@@ -83,11 +112,12 @@ def HayesElasticModel(posZ, loadZ, gf_flag, maxStrain, R, v, Rsq_req, sampleThic
         sampleThickness (float): Sample thickness in mm.
         origin_set (Bool): Indicate whether signal starts at origin.
         eqModulus (Bool): Indicate whether signal only fits 2 points.
+        spherical_indenter (Bool): Indicate whether indenter is spherical otherwise cylindrical
 
     Returns:
         G (float): Indentation Shear Modulus in MPa.
         E (float): Indentation Elastic Modulus in MPa.
-        Fit (np.array): Fit for posZ and loadZ using Hayes spherical model 1972.
+        Fit (np.array): Fit for posZ and loadZ using Hayes spherical or cylindrical model 1972.
         Rsq_adj (float): Adjusted R-squared for the fit.
     """
     gf_to_N = 0.00980655
@@ -117,9 +147,15 @@ def HayesElasticModel(posZ, loadZ, gf_flag, maxStrain, R, v, Rsq_req, sampleThic
             w0 = posZ[k] - z0
             P = loadZ[k]
             if sampleThickness is not None:
-                a, K = Hayes_Model(w0, sampleThickness, R, v)
+                if spherical_indenter:
+                    a, K = Hayes_Model(w0, sampleThickness, R, v)
+                else:
+                    a, K = Hayes_Model_Cylinder(sampleThickness, R, v)
             else:
-                a, K = Hayes_Model(w0, z0, R, v)
+                if spherical_indenter:
+                    a, K = Hayes_Model(w0, z0, R, v)
+                else:
+                    a, K = Hayes_Model_Cylinder(z0, R, v)
             M[k,0] = P
             M[k,1] = 4*w0*a*K/(1-v)   
         if not req == 1:
