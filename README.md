@@ -210,7 +210,7 @@ Returns:
 
 #### HayesElasticModel
 ```python
-def HayesElasticModel(posZ, loadZ, gf_flag, maxStrain, R, v, Rsq_req, sampleThickness = None, origin_set=False, eqModulus=False)
+def HayesElasticModel(posZ, loadZ, gf_flag, maxStrain, R, v, Rsq_req, sampleThickness = None, origin_set=False, eqModulus=False, spherical_indenter=False)
 ```
 Extracts Elastic Properties from Indentation.
 
@@ -225,6 +225,7 @@ Arguments:
 - `sampleThickness` *float* - Sample thickness in mm.
 - `origin_set` *bool* - Indicate whether signal starts at origin.
 - `eqModulus` *bool* - Indicate whether signal only fits 2 points.
+- `spherical_indenter` *bool* - Indicate wheter to use cylinder Hayes model or spherical model.
   
 Returns:
 - `G` *float* - Indentation Shear Modulus in MPa.
