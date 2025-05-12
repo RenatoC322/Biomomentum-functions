@@ -110,6 +110,16 @@ def select_data_file_dir(keyword = None, read_MAP = False):
                 files.append((dir_path / fname, stem))
     return files
 
+def _clean_header(name: str) -> str:
+    """
+    Strip units (text after comma) and format axis labels.
+    """
+    base = name.split(',')[0].strip()
+    if ' ' in base:
+        left, axis = base.rsplit(' ', 1)
+        return f"{left} {axis}"
+    return base
+
 def _find_divider_indices(lines: List[str], divs: List[str]) -> List[int]:
     """
     Return a list of 1-based line indices where any of the specified dividers appear.
@@ -263,8 +273,10 @@ def _parse_data_section(path: Path, lines: List[str], idxs: List[int], func_idx:
         return {}
     # read headers
     header_df = pd.read_csv(path, sep="\t", skiprows=start, nrows=0, engine="c")
-    cols = list(range(len(header_df.columns))) if headers is None else _get_data_columns(lines, start, headers)
-    names = list(header_df.columns)
+    raw_cols = list(header_df.columns)
+    names = [_clean_header(c) for c in raw_cols]
+    cols = list(range(len(raw_cols))) if headers is None else _get_data_columns(lines, start, headers)
+
     def clean_arr(d: Dict[str, List[Any]]) -> Dict[str, np.ndarray]:
         return {c: np.array([v for v in vals if v != '' and pd.notna(v)])
                 for c, vals in d.items()}

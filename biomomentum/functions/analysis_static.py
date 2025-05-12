@@ -4,6 +4,7 @@ import os
 
 from scipy.signal import find_peaks, savgol_filter
 from scipy.ndimage import gaussian_filter
+from importlib.resources import files
 
 from .stats import rsquared
 from .interpolation import linear_least_square
@@ -286,7 +287,7 @@ def stressrelaxation_fit(t, sz, r0, e0, vm, t0in = None, filemat = None):
         return veff
     
     if filemat is None:
-        filemat = os.path.join(os.getcwd(),"sveff_tab.mat")
+        filemat = files("biomomentum.data") / "sveff_tab.mat"
 
     sz0 = sz[0]
     sz = sz - sz[0]
