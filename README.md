@@ -12,8 +12,8 @@ this library, it recommended to use conda environments.
 3. From the /dist directory of this repository, download the WHL file
 4. Activate the newly created environment:
 > conda activate env
-5. Copy the directory of the WHL file and run the following command:
-> pip install "copy directory of WHL file downloaded"
+5. Run the following command:
+> pip install --upgrade biomomentum
 6. Import the library into a Python script or notebook:
 > Import biomomentum
 
