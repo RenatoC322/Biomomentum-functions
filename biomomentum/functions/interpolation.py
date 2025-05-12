@@ -46,7 +46,7 @@ def interpolateMAP(subSurfaces, interpolate_to_bounds = False, smooth_data = Fal
     """
     QP_2D, triangles, grid_X, grid_Y = [], [], [], []
     for surface in subSurfaces:
-        if surface not in ["MAP-Info", "references"]:
+        if surface not in ["MAP-Info", "REF"]:
             surface_1 = subSurfaces[surface]
             pos = np.array(surface_1["Image Position"])
             QP = np.array(surface_1[keyword])
