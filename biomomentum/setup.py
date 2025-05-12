@@ -7,10 +7,12 @@ setup(
         "numpy",
         "pandas",
         "scipy",
-        "scikit-learn"
+        "scikit-learn",
+        "opencv-python"
     ],
-    version='0.1.2',
+    version='0.1.5',
     description='Mach-1 Analysis Functions',
     author='Renato Castillo',
-    author_email="castillo.renato@biomomentum.com"
+    author_email="castillo.renato@biomomentum.com",
+    python_requires=">=3.11",
 )

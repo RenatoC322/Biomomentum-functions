@@ -4,7 +4,11 @@ import os
 
 from scipy.signal import find_peaks, savgol_filter
 from scipy.ndimage import gaussian_filter
-from .utils import isNegative, check_data, ResidualStandardError, rsquared, linear_least_square, normalize_signal
+
+from .stats import rsquared
+from .interpolation import linear_least_square
+from .utils import isNegative, check_data, normalize_signal
+
 
 def compliance_correction(displacement, load, criteria = 1, interval = None):
     """

@@ -4,7 +4,7 @@ import scipy as sp
 from scipy.interpolate import interp1d
 from scipy.signal import periodogram, detrend
 
-from .utils import ResidualStandardError
+from .stats import ResidualStandardError
 
 def leasqrfunc(Params, Time, data):
     """
