@@ -9,7 +9,6 @@ this library, it recommended to use conda environments.
 2. Open *Anaconda Powershell Prompt* by searching in the taskbar.
 3. Create a new environment using the following command on an *Anaconda Powershell Prompt* (use python 3.11 for most stable release): 
 > conda create --name env python=3.11
-3. From the /dist directory of this repository, download the WHL file
 4. Activate the newly created environment:
 > conda activate env
 5. Run the following command:
